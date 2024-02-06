@@ -1,0 +1,13 @@
+-D HXCPP_CHECK_POINTER
+-D HXCPP_STACK_LINE
+-D analyzer-optimize
+
+--library hxsdl
+--main Main
+
+--cpp bin/cpp
+--cmd Xcopy assets\ bin\cpp\assets\ /E /H /C /I /Y
+
+--cmd cd bin/cpp
+--cmd Main.exe
+--cmd cd ../../
