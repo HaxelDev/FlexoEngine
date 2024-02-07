@@ -4,40 +4,34 @@ import sdl.SDL;
 import sdl.Surface;
 import sdl.Texture;
 import sdl.Image;
-import haxe.Timer;
 
 class Sprite {
     public var texture:Texture;
     public var textureSize:Point;
     public var position:Point;
     public var scale:FPoint;
+    public var animations:Map<String, Array<Int>>;
+    public var currentAnimation:String;
+    public var currentFrame:Int;
+    public var frameWidth:Int;
+    public var frameHeight:Int;
+    public var isAnimating:Bool;
 
-    private var animations:Map<String, Array<Int>>;
-    private var currentAnimation:String;
-    private var currentFrame:Int;
-    private var isAnimating:Bool;
-    private var loopAnimation:Bool;
-    private var animationTimer:Timer;
-
-    private var frameWidth:Int;
-    private var frameHeight:Int;
-
-    public function new(frameWidth:Int = 0, frameHeight:Int = 0) {
+    public function new() {
         position = Point.create(0, 0);
         scale = FPoint.create(1, 1);
-        this.frameWidth = frameWidth;
-        this.frameHeight = frameHeight;
-
         animations = new Map<String, Array<Int>>();
         currentAnimation = "";
         currentFrame = 0;
+        frameWidth = 0;
+        frameHeight = 0;
         isAnimating = false;
-        loopAnimation = false;
-        animationTimer = new Timer(Std.int(1000 / 30));
-        animationTimer.run = onAnimationFrame;
     }
 
-    public function loadImage(path:String, frameWidth:Int = 0, frameHeight:Int = 0) {
+    public function loadImage(path:String, frameWidth:Int, frameHeight:Int) {
+        this.frameWidth = frameWidth;
+        this.frameHeight = frameHeight;
+
         var surface:Surface = Image.load(path);
         if (surface == null) {
             Sys.println("Failed to load image: " + path);
@@ -50,35 +44,8 @@ class Sprite {
             return;
         }
 
-        if (frameWidth == 0 || frameHeight == 0) {
-            textureSize = SDL.getTextureSize(texture);
-            this.frameWidth = textureSize.x;
-            this.frameHeight = textureSize.y;
-        } else {
-            this.frameWidth = frameWidth;
-            this.frameHeight = frameHeight;
-            textureSize = Point.create(frameWidth, frameHeight);
-        }
-
+        textureSize = SDL.getTextureSize(texture);
         SDL.freeSurface(surface);
-    }
-
-    public function render():Void {
-        if (isAnimating) {
-            var frames:Array<Int> = animations.get(currentAnimation);
-            if (frames != null && frames.length > 0 && currentFrame < frames.length) {
-                renderFrame(frames[currentFrame]);
-            }
-        } else {
-            var sourceRect:Rectangle = Rectangle.create(0, 0, textureSize.x, textureSize.y);
-            var destinationRect:Rectangle = Rectangle.create(
-                position.x,
-                position.y,
-                Std.int(textureSize.x * scale.x),
-                Std.int(textureSize.y * scale.y)
-            );
-            SDL.renderCopy(Flexo.renderer, texture, sourceRect, destinationRect);
-        }
     }
 
     public function addAnimation(name:String, frames:Array<Int>) {
@@ -87,61 +54,59 @@ class Sprite {
 
     public function playAnimation(name:String, loop:Bool = false) {
         if (!animations.exists(name)) {
-            Sys.println("Animation '" + name + "' not found!");
+            Sys.println("Animation '" + name + "' does not exist.");
             return;
         }
 
         currentAnimation = name;
         currentFrame = 0;
         isAnimating = true;
-        loopAnimation = loop;
-        animationTimer.stop();
-        animationTimer.run();
     }
 
-    private function onAnimationFrame() {
-        if (!isAnimating) return;
+    public function stopAnimation() {
+        isAnimating = false;
+    }
+
+    public function updateAnimation() {
+        if (!isAnimating || currentAnimation == "" || !animations.exists(currentAnimation)) return;
 
         var frames:Array<Int> = animations.get(currentAnimation);
-        if (frames == null || frames.length == 0) {
-            Sys.println("No frames found for animation: " + currentAnimation);
-            return;
-        }
+        currentFrame++;
 
         if (currentFrame >= frames.length) {
-            if (loopAnimation) {
-                currentFrame = 0;
-            } else {
-                isAnimating = false;
-                animationTimer.stop();
-                return;
-            }
+            if (isAnimating) currentFrame = 0;
+            else currentFrame = frames.length - 1;
         }
-
-        renderFrame(frames[currentFrame]);
-        currentFrame++;
     }
 
-    private function renderFrame(frameIndex:Int) {
-        var columns:Int = Std.int(textureSize.x / frameWidth);
-        var rowIndex:Int = Std.int(frameIndex / columns);
-        var columnIndex:Int = frameIndex % columns;
-    
-        var sourceRect:Rectangle = Rectangle.create(
-            columnIndex * frameWidth,
-            rowIndex * frameHeight,
-            frameWidth,
-            frameHeight
-        );
-    
-        var destinationRect:Rectangle = Rectangle.create(
-            position.x,
-            position.y,
-            Std.int(frameWidth * scale.x),
-            Std.int(frameHeight * scale.y)
-        );
-    
-        SDL.renderCopy(Flexo.renderer, texture, sourceRect, destinationRect);
+    public function render(?targetX:Int = null, ?targetY:Int = null, ?targetWidth:Int = null, ?targetHeight:Int = null) {
+        if (texture == null) return;
+
+        if (isAnimating && currentAnimation != "" && animations.exists(currentAnimation)) {
+            var frames:Array<Int> = animations.get(currentAnimation);
+            if (frames.length > 0 && currentFrame < frames.length) {
+                var frame:Int = frames[currentFrame];
+                var srcRect:Rectangle = Rectangle.create(frameWidth * frame, 0, frameWidth, frameHeight);
+                var dstRect:Rectangle = Rectangle.create(
+                    targetX != null ? targetX : position.x,
+                    targetY != null ? targetY : position.y,
+                    targetWidth != null ? targetWidth : Std.int(frameWidth * scale.x),
+                    targetHeight != null ? targetHeight : Std.int(frameHeight * scale.y)
+                );
+
+                SDL.renderCopy(Flexo.renderer, texture, srcRect, dstRect);
+            }
+        } else {
+            var srcRect:Rectangle = Rectangle.create(0, 0, textureSize.x, textureSize.y);
+            var dstRect:Rectangle = Rectangle.create(
+                targetX != null ? targetX : position.x,
+                targetY != null ? targetY : position.y,
+                targetWidth != null ? targetWidth : Std.int(textureSize.x * scale.x),
+                targetHeight != null ? targetHeight : Std.int(textureSize.y * scale.y)
+            );
+
+            SDL.renderCopy(Flexo.renderer, texture, srcRect, dstRect);
+        }
     }
 
     public function setPosition(x:Int, y:Int):Void {
