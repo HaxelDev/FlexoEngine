@@ -16,6 +16,13 @@ class Main extends Flexo {
         super.render();
     }
 
+    override function handleEvents() {
+        if (flexo.Keyboard.isKeyDown(SPACE)) {
+            trace("Spacja jest wciśnięta!");
+        }
+        super.handleEvents();
+    }
+
     static function main() {
         new Main();
     }

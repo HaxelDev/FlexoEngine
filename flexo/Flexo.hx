@@ -35,6 +35,8 @@ class Flexo {
             return;
         }
 
+        sdl.ttf.TTF.init();
+
         window = SDL.createWindow(title, WindowPos.CENTERED, WindowPos.CENTERED, width, height, WindowInitFlags.RESIZABLE | WindowInitFlags.ALLOW_HIGHDPI);
         if (window == null) {
             Sys.println("Window creation failed");
@@ -64,9 +66,7 @@ class Flexo {
 
     public function render() {
         SDL.renderClear(renderer);
-        for (sprite in sprites) {
-            sprite.render();
-        }
+        for (sprite in sprites) { sprite.render(); }
         SDL.renderPresent(renderer);
     }
 
