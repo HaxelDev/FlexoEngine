@@ -4,7 +4,6 @@ import sdl.SDL;
 import sdl.Surface;
 import sdl.Texture;
 import sdl.Image;
-import haxe.Timer;
 
 class Sprite {
     public var texture:Texture;
@@ -16,10 +15,11 @@ class Sprite {
     public var currentAnimationFrame:Int;
     public var isAnimationPlaying:Bool;
     public var loopAnimation:Bool;
-    public var animationTimer:Timer;
     public var frameWidth:Int;
     public var frameHeight:Int;
     public var isSpriteSheet:Bool;
+    public var animationSpeed:Float;
+    public var animationAccumulator:Float;
 
     public function new() {
         position = Point.create(0, 0);
@@ -30,6 +30,8 @@ class Sprite {
         isAnimationPlaying = false;
         loopAnimation = false;
         isSpriteSheet = false;
+        animationSpeed = 1.0;
+        animationAccumulator = 0.0;
     }
 
     public function loadImage(path:String, frameWidth:Int = 0, frameHeight:Int = 0, isSpriteSheet:Bool = false):Void {
@@ -95,18 +97,29 @@ class Sprite {
         animations.set(name, frames);
     }
 
-    public function playAnimation(name:String, loop:Bool = false):Void {
+    public function playAnimation(name:String, loop:Bool = true):Void {
         currentAnimation = name;
         currentAnimationFrame = 0;
         isAnimationPlaying = true;
         loopAnimation = loop;
-        animationTimer = new Timer(Std.int(1000 / 60));
-        animationTimer.run = advanceAnimationFrame;
     }
 
     public function stopAnimation():Void {
         isAnimationPlaying = false;
-        animationTimer.stop();
+    }
+
+    public function setAnimationSpeed(speed:Float):Void {
+        animationSpeed = speed;
+    }
+
+    public function update(dt:Float):Void {
+        if (isAnimationPlaying) {
+            animationAccumulator += dt * animationSpeed;
+            while (animationAccumulator >= 1.0) {
+                animationAccumulator -= 1.0;
+                advanceAnimationFrame();
+            }
+        }
     }
 
     private function advanceAnimationFrame():Void {
