@@ -16,23 +16,13 @@ class Flexo {
     public static var renderer:Renderer;
 
     private var sprites:Array<flexo.Sprite>;
-    private var lastFrameTime:Float;
-    private var fpsCounter:Int;
-    private var fpsDisplayTimer:Float;
-    private var targetFPS:Float;
-    private var frameDelay:Float;
 
-    public function new(width:Int, height:Int, title:String, targetFPS:Float = 60.0) {
+    public function new(width:Int, height:Int, title:String) {
         this.width = width;
         this.height = height;
         this.title = title;
-        this.targetFPS = Math.max(60.0, Math.min(targetFPS, 120.0));
-        this.frameDelay = 1000.0 / this.targetFPS;
 
         sprites = new Array<flexo.Sprite>();
-        lastFrameTime = 0;
-        fpsCounter = 0;
-        fpsDisplayTimer = 0;
 
         init();
     }
@@ -60,7 +50,6 @@ class Flexo {
         }
 
         isRunning = true;
-        lastFrameTime = SDL.getTicks();
         startGameLoop();
     }
 
@@ -73,29 +62,7 @@ class Flexo {
         }
     }
 
-    public function update() {
-        var currentTime:Float = SDL.getTicks();
-        var elapsedTime:Float = currentTime - lastFrameTime;
-
-        if (elapsedTime < frameDelay) {
-            SDL.delay(Std.int(frameDelay - elapsedTime));
-            return;
-        }
-
-        var deltaTime:Float = elapsedTime / 1000.0;
-
-        fpsCounter++;
-        fpsDisplayTimer += deltaTime;
-
-        for (sprite in sprites) { sprite.update(deltaTime); }
-
-        if (fpsDisplayTimer >= 1.0) {
-            fpsCounter = 0;
-            fpsDisplayTimer = 0;
-        }
-
-        lastFrameTime = currentTime;
-    }
+    public function update() {}
 
     public function render() {
         SDL.renderClear(renderer);

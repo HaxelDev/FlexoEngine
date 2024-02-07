@@ -93,46 +93,6 @@ class Sprite {
         }
     }
 
-    public function addAnimation(name:String, frames:Array<Int>):Void {
-        animations.set(name, frames);
-    }
-
-    public function playAnimation(name:String, loop:Bool = true):Void {
-        currentAnimation = name;
-        currentAnimationFrame = 0;
-        isAnimationPlaying = true;
-        loopAnimation = loop;
-    }
-
-    public function stopAnimation():Void {
-        isAnimationPlaying = false;
-    }
-
-    public function setAnimationSpeed(speed:Float):Void {
-        animationSpeed = speed;
-    }
-
-    public function update(dt:Float):Void {
-        if (isAnimationPlaying) {
-            animationAccumulator += dt * animationSpeed;
-            while (animationAccumulator >= 1.0) {
-                animationAccumulator -= 1.0;
-                advanceAnimationFrame();
-            }
-        }
-    }
-
-    private function advanceAnimationFrame():Void {
-        var frames:Array<Int> = animations.get(currentAnimation);
-        if (currentAnimationFrame < frames.length - 1) {
-            currentAnimationFrame++;
-        } else if (loopAnimation) {
-            currentAnimationFrame = 0;
-        } else {
-            stopAnimation();
-        }
-    }
-
     public function render(?targetX:Int = null, ?targetY:Int = null, ?targetWidth:Int = null, ?targetHeight:Int = null) {
         var srcRect:Rectangle;
 
@@ -164,6 +124,47 @@ class Sprite {
     public function setScale(scaleX:Float, scaleY:Float):Void {
         scale.x = scaleX;
         scale.y = scaleY;
+    }
+
+    public function addAnimation(name:String, frames:Array<Int>):Void {
+        animations.set(name, frames);
+    }
+
+    public function playAnimation(name:String, loop:Bool = false):Void {
+        if (!animations.exists(name)) {
+            Sys.println("Animation '" + name + "' does not exist.");
+            return;
+        }
+    
+        currentAnimation = name;
+        currentAnimationFrame = 0;
+        isAnimationPlaying = true;
+        loopAnimation = loop;
+    }
+
+    public function stopAnimation():Void {
+        isAnimationPlaying = false;
+    }
+
+    public function updateAnimation(deltaTime:Float):Void {
+        if (!isAnimationPlaying) return;
+
+        animationAccumulator += deltaTime * animationSpeed;
+        var frameDuration:Float = 1.0 / 24;
+
+        while (animationAccumulator >= frameDuration) {
+            currentAnimationFrame++;
+            if (currentAnimationFrame >= animations.get(currentAnimation).length) {
+                if (loopAnimation) {
+                    currentAnimationFrame = 0;
+                } else {
+                    currentAnimationFrame = animations.get(currentAnimation).length - 1;
+                    isAnimationPlaying = false;
+                    break;
+                }
+            }
+            animationAccumulator -= frameDuration;
+        }
     }
 
     public static function cleanup() {
