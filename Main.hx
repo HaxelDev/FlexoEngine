@@ -3,7 +3,7 @@ import flexo.Sprite;
 
 class Main extends Flexo {
     public function new() {
-        super(800, 600, "My Game");
+        super(800, 600, "My Game", 120);
     }
 
     override function render() {
