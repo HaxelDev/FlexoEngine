@@ -145,12 +145,11 @@ class Sprite {
 
     public function update():Void {
         if (paused || finished) return;
-
+    
         var animation:Animation = animations.get(curAnim);
         if (animation == null) return;
-
+    
         animation.update(Flexo.elapsed);
-
         curFrame = animation.curIndex;
         if (curFrame >= animation.frames.length) {
             finished = true;

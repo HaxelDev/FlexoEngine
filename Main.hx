@@ -18,6 +18,10 @@ class Main extends Flexo {
         super.render();
     }
 
+    override function update() {
+        super.update();
+    }
+
     override function handleEvents() {
         super.handleEvents();
     }
