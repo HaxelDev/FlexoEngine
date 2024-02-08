@@ -108,7 +108,7 @@ class Sprite {
 
     public function addAnimation(animName:String, frameIndexes:Array<Int>, frameRate:Float = 0, looped:Bool = true):Sprite {
         frames.set(animName, frameIndexes);
-        animations.set(animName, new Animation(animName, frameRate, looped, frameIndexes.length));
+        animations.set(animName, new Animation(animName, frameRate, looped, frameIndexes));
         return this;
     }
 
@@ -190,17 +190,18 @@ class Animation {
     public var curIndex:Int;
     public var timer:Float;
 
-    public function new(name:String, frameRate:Float, looped:Bool, frameCount:Int) {
+    public function new(name:String, frameRate:Float, looped:Bool, frameIndexes:Array<Int>) {
         this.name = name;
         this.frameRate = frameRate;
         this.looped = looped;
-        frames = new Array<Int>();
-        for (i in 0...frameCount) frames.push(i);
+        this.frames = frameIndexes;
         curIndex = 0;
         timer = 0;
     }
 
     public function update(elapsed:Float):Void {
+        if (!looped && curIndex >= frames.length) return;
+
         timer += elapsed;
         var frameDuration:Float = 1.0 / frameRate;
 
