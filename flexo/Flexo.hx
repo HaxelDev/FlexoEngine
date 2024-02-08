@@ -14,6 +14,8 @@ class Flexo {
 
     public static var window:Window;
     public static var renderer:Renderer;
+    public static var elapsed:Float = 0.0;
+    public static var lastTime:Float = Sys.time();
 
     private var sprites:Array<flexo.Sprite>;
 
@@ -62,7 +64,18 @@ class Flexo {
         }
     }
 
-    public function update() {}
+    public function update() {
+        var currentTime:Float = Sys.time();
+        var deltaTime:Float = currentTime - lastTime;
+        lastTime = currentTime;
+        elapsed = deltaTime;
+        for (sprite in sprites) {
+            if (sprite.isSpriteSheet) {
+                sprite.update();
+            }
+        }
+        SDL.delay(16);
+    }
 
     public function render() {
         SDL.renderClear(renderer);

@@ -10,28 +10,28 @@ class Sprite {
     public var textureSize:Point;
     public var position:Point;
     public var scale:FPoint;
-    public var animations:Map<String, Array<Int>>;
-    public var currentAnimation:String;
-    public var currentAnimationFrame:Int;
-    public var isAnimationPlaying:Bool;
-    public var loopAnimation:Bool;
     public var frameWidth:Int;
     public var frameHeight:Int;
     public var isSpriteSheet:Bool;
-    public var animationSpeed:Float;
-    public var animationAccumulator:Float;
+    public var curAnim:String;
+    public var curFrame:Int;
+    public var frames:Map<String, Array<Int>>;
+    public var animations:Map<String, Animation>;
+    public var paused:Bool;
+    public var finished:Bool;
+    public var callback:Void->Void;
 
     public function new() {
         position = Point.create(0, 0);
         scale = FPoint.create(1, 1);
-        animations = new Map<String, Array<Int>>();
-        currentAnimation = "";
-        currentAnimationFrame = 0;
-        isAnimationPlaying = false;
-        loopAnimation = false;
-        isSpriteSheet = false;
-        animationSpeed = 1.0;
-        animationAccumulator = 0.0;
+
+        curAnim = "";
+        curFrame = 0;
+        frames = new Map<String, Array<Int>>();
+        animations = new Map<String, Animation>();
+        paused = true;
+        finished = true;
+        callback = null;
     }
 
     public function loadImage(path:String, frameWidth:Int = 0, frameHeight:Int = 0, isSpriteSheet:Bool = false):Void {
@@ -81,23 +81,13 @@ class Sprite {
 
         this.frameWidth = frameWidth;
         this.frameHeight = frameHeight;
-
-        var framesPerRow:Int = Std.int(textureSize.x / frameWidth);
-        var framesPerColumn:Int = Std.int(textureSize.y / frameHeight);
-        for (i in 0...framesPerRow) {
-            for (j in 0...framesPerColumn) {
-                var frameIndex:Int = j * framesPerRow + i;
-                var frameName:String = "Frame_" + frameIndex;
-                animations.set(frameName, [frameIndex]);
-            }
-        }
     }
 
     public function render(?targetX:Int = null, ?targetY:Int = null, ?targetWidth:Int = null, ?targetHeight:Int = null) {
         var srcRect:Rectangle;
 
         if (isSpriteSheet) {
-            var frameIndex:Int = animations.get(currentAnimation)[currentAnimationFrame];
+            var frameIndex:Int = frames.get(curAnim)[curFrame];
             var frameColumn:Int = Std.int(frameIndex % (textureSize.x / frameWidth));
             var frameRow:Int = Std.int(frameIndex / (textureSize.y / frameWidth));
             srcRect = Rectangle.create(frameWidth * frameColumn, frameHeight * frameRow, frameWidth, frameHeight);
@@ -116,6 +106,58 @@ class Sprite {
         );
     }
 
+    public function addAnimation(animName:String, frameIndexes:Array<Int>, frameRate:Float = 0, looped:Bool = true):Sprite {
+        frames.set(animName, frameIndexes);
+        animations.set(animName, new Animation(animName, frameRate, looped, frameIndexes.length));
+        return this;
+    }
+
+    public function playAnimation(animName:String, force:Bool = false):Sprite {
+        if (!force && curAnim == animName) return this;
+        curAnim = animName;
+        curFrame = 0;
+        paused = false;
+        finished = false;
+        return this;
+    }
+
+    public function pauseAnimation():Sprite {
+        paused = true;
+        return this;
+    }
+
+    public function resumeAnimation():Sprite {
+        paused = false;
+        return this;
+    }
+
+    public function restartAnimation():Sprite {
+        curFrame = 0;
+        finished = false;
+        return this;
+    }
+
+    public function stopAnimation():Sprite {
+        paused = true;
+        finished = true;
+        return this;
+    }
+
+    public function update():Void {
+        if (paused || finished) return;
+
+        var animation:Animation = animations.get(curAnim);
+        if (animation == null) return;
+
+        animation.update(Flexo.elapsed);
+
+        curFrame = animation.curIndex;
+        if (curFrame >= animation.frames.length) {
+            finished = true;
+            if (callback != null) callback();
+        }
+    }
+
     public function setPosition(x:Int, y:Int):Void {
         position.x = x;
         position.y = y;
@@ -126,48 +168,53 @@ class Sprite {
         scale.y = scaleY;
     }
 
-    public function addAnimation(name:String, frames:Array<Int>):Void {
-        animations.set(name, frames);
+    public function setCallback(callback:Void->Void):Sprite {
+        this.callback = callback;
+        return this;
     }
 
-    public function playAnimation(name:String, loop:Bool = false):Void {
-        if (!animations.exists(name)) {
-            Sys.println("Animation '" + name + "' does not exist.");
-            return;
-        }
-    
-        currentAnimation = name;
-        currentAnimationFrame = 0;
-        isAnimationPlaying = true;
-        loopAnimation = loop;
-    }
-
-    public function stopAnimation():Void {
-        isAnimationPlaying = false;
-    }
-
-    public function updateAnimation(deltaTime:Float):Void {
-        if (!isAnimationPlaying) return;
-
-        animationAccumulator += deltaTime * animationSpeed;
-        var frameDuration:Float = 1.0 / 24;
-
-        while (animationAccumulator >= frameDuration) {
-            currentAnimationFrame++;
-            if (currentAnimationFrame >= animations.get(currentAnimation).length) {
-                if (loopAnimation) {
-                    currentAnimationFrame = 0;
-                } else {
-                    currentAnimationFrame = animations.get(currentAnimation).length - 1;
-                    isAnimationPlaying = false;
-                    break;
-                }
-            }
-            animationAccumulator -= frameDuration;
-        }
+    public function isFinished():Bool {
+        return finished;
     }
 
     public static function cleanup() {
         Image.quit();
+    }
+}
+
+class Animation {
+    public var name:String;
+    public var frameRate:Float;
+    public var looped:Bool;
+    public var frames:Array<Int>;
+    public var curIndex:Int;
+    public var timer:Float;
+
+    public function new(name:String, frameRate:Float, looped:Bool, frameCount:Int) {
+        this.name = name;
+        this.frameRate = frameRate;
+        this.looped = looped;
+        frames = new Array<Int>();
+        for (i in 0...frameCount) frames.push(i);
+        curIndex = 0;
+        timer = 0;
+    }
+
+    public function update(elapsed:Float):Void {
+        timer += elapsed;
+        var frameDuration:Float = 1.0 / frameRate;
+
+        while (timer >= frameDuration) {
+            curIndex++;
+            if (curIndex >= frames.length) {
+                if (looped) {
+                    curIndex = 0;
+                } else {
+                    curIndex = frames.length - 1;
+                    break;
+                }
+            }
+            timer -= frameDuration;
+        }
     }
 }
