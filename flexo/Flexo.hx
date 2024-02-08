@@ -17,14 +17,14 @@ class Flexo {
     public static var elapsed:Float = 0.0;
     public static var lastTime:Float = Sys.time();
 
-    private var sprites:Array<flexo.Sprite>;
+    private var sprites:Array<Sprite>;
 
     public function new(width:Int, height:Int, title:String) {
         this.width = width;
         this.height = height;
         this.title = title;
 
-        sprites = new Array<flexo.Sprite>();
+        sprites = new Array<Sprite>();
 
         init();
     }
@@ -83,11 +83,11 @@ class Flexo {
         SDL.renderPresent(renderer);
     }
 
-    public function addSprite(sprite:flexo.Sprite):Void {
+    public function addSprite(sprite:Sprite):Void {
         sprites.push(sprite);
     }
 
-    public function removeSprite(sprite:flexo.Sprite):Void {
+    public function removeSprite(sprite:Sprite):Void {
         var index:Int = sprites.indexOf(sprite);
         if (index != -1) {
             sprites.splice(index, 1);
@@ -104,7 +104,7 @@ class Flexo {
     }
 
     public function cleanup() {
-        flexo.Sprite.cleanup();
+        Sprite.cleanup();
 
         SDL.destroyRenderer(renderer);
         SDL.destroyWindow(window);
