@@ -82,7 +82,6 @@ class Sprite {
         this.frameWidth = frameWidth;
         this.frameHeight = frameHeight;
 
-        // Dzielimy obrazek na klatki
         var framesPerRow:Int = Std.int(textureSize.x / frameWidth);
         var framesPerColumn:Int = Std.int(textureSize.y / frameHeight);
         var frameIndexes:Array<Int> = [];
