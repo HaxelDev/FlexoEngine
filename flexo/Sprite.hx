@@ -81,6 +81,19 @@ class Sprite {
 
         this.frameWidth = frameWidth;
         this.frameHeight = frameHeight;
+
+        // Dzielimy obrazek na klatki
+        var framesPerRow:Int = Std.int(textureSize.x / frameWidth);
+        var framesPerColumn:Int = Std.int(textureSize.y / frameHeight);
+        var frameIndexes:Array<Int> = [];
+        for (i in 0...framesPerRow) {
+            for (j in 0...framesPerColumn) {
+                var frameIndex:Int = j * framesPerRow + i;
+                frameIndexes.push(frameIndex);
+            }
+        }
+        frames.set("default", frameIndexes);
+        animations.set("default", new Animation("default", 1.0, true, frameIndexes.length));
     }
 
     public function render(?targetX:Int = null, ?targetY:Int = null, ?targetWidth:Int = null, ?targetHeight:Int = null) {
@@ -106,9 +119,9 @@ class Sprite {
         );
     }
 
-    public function addAnimation(animName:String, frameIndexes:Array<Int>, frameRate:Float = 0, looped:Bool = true):Sprite {
+    public function addAnimation(animName:String, frameIndexes:Array<Int>, frameRate:Float = 12, looped:Bool = true):Sprite {
         frames.set(animName, frameIndexes);
-        animations.set(animName, new Animation(animName, frameRate, looped, frameIndexes));
+        animations.set(animName, new Animation(animName, frameRate, looped, frameIndexes.length));
         return this;
     }
 
@@ -145,11 +158,12 @@ class Sprite {
 
     public function update():Void {
         if (paused || finished) return;
-    
+
         var animation:Animation = animations.get(curAnim);
         if (animation == null) return;
-    
+
         animation.update(Flexo.elapsed);
+
         curFrame = animation.curIndex;
         if (curFrame >= animation.frames.length) {
             finished = true;
@@ -188,23 +202,24 @@ class Animation {
     public var frames:Array<Int>;
     public var curIndex:Int;
     public var timer:Float;
+    public var elapsed:Float;
 
-    public function new(name:String, frameRate:Float, looped:Bool, frameIndexes:Array<Int>) {
+    public function new(name:String, frameRate:Float, looped:Bool, frameCount:Int) {
         this.name = name;
         this.frameRate = frameRate;
         this.looped = looped;
-        this.frames = frameIndexes;
+        frames = new Array<Int>();
+        for (i in 0...frameCount) frames.push(i);
         curIndex = 0;
         timer = 0;
+        elapsed = 0;
     }
 
     public function update(elapsed:Float):Void {
-        if (!looped && curIndex >= frames.length) return;
-
-        timer += elapsed;
+        this.elapsed += elapsed;
         var frameDuration:Float = 1.0 / frameRate;
 
-        while (timer >= frameDuration) {
+        while (this.elapsed >= frameDuration) {
             curIndex++;
             if (curIndex >= frames.length) {
                 if (looped) {
@@ -214,7 +229,7 @@ class Animation {
                     break;
                 }
             }
-            timer -= frameDuration;
+            this.elapsed -= frameDuration;
         }
     }
 }

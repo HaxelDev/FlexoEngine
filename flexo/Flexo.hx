@@ -3,6 +3,7 @@ package flexo;
 import sdl.SDL;
 import sdl.Window;
 import sdl.Renderer;
+import sdl.Surface;
 import sdl.Image;
 import sdl.Event;
 
@@ -10,6 +11,7 @@ class Flexo {
     public var width:Int;
     public var height:Int;
     public var title:String;
+    public var icon:String;
     public var isRunning:Bool;
 
     public static var window:Window;
@@ -19,10 +21,11 @@ class Flexo {
 
     private var sprites:Array<Sprite>;
 
-    public function new(width:Int, height:Int, title:String) {
+    public function new(width:Int, height:Int, title:String, ?icon:String) {
         this.width = width;
         this.height = height;
         this.title = title;
+        this.icon = icon;
 
         sprites = new Array<Sprite>();
 
@@ -49,6 +52,12 @@ class Flexo {
         if (renderer == null) {
             Sys.println("Renderer creation failed");
             return;
+        }
+
+        if (sys.FileSystem.exists(icon)) {
+            var iconSurface:Surface = Image.load(icon);
+            SDL.setWindowIcon(window, iconSurface);
+            SDL.freeSurface(iconSurface);
         }
 
         isRunning = true;
