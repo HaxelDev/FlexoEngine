@@ -8,15 +8,20 @@ import sdl.Image;
 class Sprite {
     public var texture:Texture;
     public var textureSize:Point;
+
     public var position:Point;
     public var scale:FPoint;
+
     public var frameWidth:Int;
     public var frameHeight:Int;
     public var isSpriteSheet:Bool;
+
     public var curAnim:String;
     public var curFrame:Int;
+
     public var frames:Map<String, Array<Int>>;
     public var animations:Map<String, Animation>;
+
     public var paused:Bool;
     public var finished:Bool;
     public var callback:Void->Void;
@@ -27,8 +32,10 @@ class Sprite {
 
         curAnim = "";
         curFrame = 0;
+
         frames = new Map<String, Array<Int>>();
         animations = new Map<String, Animation>();
+
         paused = true;
         finished = true;
         callback = null;
@@ -92,7 +99,7 @@ class Sprite {
             }
         }
         frames.set("default", frameIndexes);
-        animations.set("default", new Animation("default", 1.0, true, frameIndexes.length));
+        animations.set("default", new Animation("default", 0, true, frameIndexes.length));
     }
 
     public function render(?targetX:Int = null, ?targetY:Int = null, ?targetWidth:Int = null, ?targetHeight:Int = null) {

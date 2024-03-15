@@ -18,6 +18,7 @@ class Flexo {
     public static var renderer:Renderer;
     public static var elapsed:Float = 0.0;
     public static var lastTime:Float = Sys.time();
+    public static var keyStates:Map<Int, Bool>;
 
     private var sprites:Array<Sprite>;
 
@@ -41,6 +42,7 @@ class Flexo {
         }
 
         sdl.ttf.TTF.init();
+        keyStates = new Map<Int, Bool>();
 
         window = SDL.createWindow(title, WindowPos.CENTERED, WindowPos.CENTERED, width, height, WindowInitFlags.RESIZABLE | WindowInitFlags.ALLOW_HIGHDPI);
         if (window == null) {
@@ -69,8 +71,16 @@ class Flexo {
         while (SDL.pollEvent(event) != 0) {
             if (event.ref.type == QUIT) {
                 isRunning = false;
+            } else if (event.ref.type == KEYDOWN) {
+                keyStates.set(event.ref.key.keysym.sym, true);
+            } else if (event.ref.type == KEYUP) {
+                keyStates.set(event.ref.key.keysym.sym, false);
             }
         }
+    }
+
+    public static function isKeyDown(keyCode:Int):Bool {
+        return keyStates.exists(keyCode) && keyStates.get(keyCode);
     }
 
     public function update() {
